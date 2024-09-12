@@ -14,9 +14,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const completion = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', 
-           //   content: 'あなたは教師です。生徒のアドバイスを100点満点で採点し、講評、点数、模範解答を出してください。' 
-           content: 'あなたは教師です。以下の生徒へのアドバイスを100点満点で採点し、簡潔な評価、点数（必ず「数字＋点」の形式で）、そして短く端的な模範解答を出してください。模範解答は、1-2文以内で、具体的で実行しやすいものにしてください。必ず「点数」を「数字＋点」の形式で返してください。例: 「90点」',
+          {
+            role: 'system',
+            content: 'あなたは教師です。以下の生徒へのアドバイスを100点満点で採点し、簡潔な評価( 必ず「」で囲んで記述してください。)、点数（必ず「数字＋点」の形式で例: 「90点」）、そして短く端的な模範解答を出してください。模範解答は、1-2文以内で、具体的で実行しやすいものにして,必ず「」で囲んで模範解答を記述してください。',
           },
           { role: 'user', content: message },
         ],
@@ -27,17 +27,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // replyの出力確認
       console.log("ChatGPT reply:", reply);
 
-      // 講評、点数、模範解答をパースして応答
-      // const evaluation = reply.match(/講評[\s\S]*?:(.*)/)?.[1]?.trim();
-      // const score = reply.match(/点数[\s\S]*?:\s*(\d+)\s*\/\s*100/)?.[1]?.trim();
-      // const modelAnswer = reply.match(/模範解答[\s\S]*?:(.*)/)?.[1]?.trim();
+      // 全ての「」内の内容をリストとして抽出し、最後の要素を模範解答とする
+      const allMatches = reply.match(/「(.*?)」/g);
 
-      const evaluation = reply.match(/「(.*?)」/)?.[1]?.trim();
-      const score = reply.match(/点数[\s\S]*?:\s*(\d+)\s*\/\s*100/)?.[1]?.trim();
-      const modelAnswer = reply.match(/「(.*?)」(?!.*「.*」)/)?.[1]?.trim(); // 最後の「」内の内容を模範解答として抽出
-      res.status(200).json({ reply, evaluation, score, modelAnswer });
+      // allMatchesを出力して確認
+      console.log("allMatches:", allMatches);
+
+      // 配列から「」内の評価と模範解答を取得
+      const evaluation = allMatches && allMatches.length > 0 ? allMatches[0].replace(/「|」/g, '').trim() : "講評が見つかりませんでした";
+      const modelAnswer = allMatches && allMatches.length > 1 ? allMatches[allMatches.length - 1].replace(/「|」/g, '').trim() : "模範解答が見つかりませんでした";
+
+      // 点数を抽出するための正規表現の修正（90点/100なども取得可能にする）
+      const scoreMatch = reply.match(/(\d+)\s*点/);  // 90点や80点の形式を抽出
+      const score = scoreMatch ? scoreMatch[1] : 'スコアが見つかりませんでした';
 
       res.status(200).json({
+        reply,
         evaluation: evaluation || "講評が見つかりませんでした",
         score: score || "スコアが見つかりませんでした",
         modelAnswer: modelAnswer || "模範解答が見つかりませんでした",

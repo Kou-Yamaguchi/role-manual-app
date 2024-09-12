@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { VStack, HStack, Box, Image } from '@chakra-ui/react';
+import { VStack, HStack, Box, Image, Text } from '@chakra-ui/react';
 import Sidebar from './Sidebar';
 import ChatForm from './ChatForm';
 import Message from './Message';
@@ -21,7 +21,8 @@ const ChatApp = () => {
   const [messages, setMessages] = useState([{ role: 'student', text: script[0] }]);
   const [currentScriptIndex, setCurrentScriptIndex] = useState(1);
   const [input, setInput] = useState('');
-  const [score, setScore] = useState(null);  // 点数を保存する状態
+  const [score, setScore] = useState(50);  // 初期スコアを50に設定
+  const [totalScore, setTotalScore] = useState(50); // 初期累積スコアを50に設定
 
   const handleSendMessage = async (message) => {
     setMessages((prevMessages) => [...prevMessages, { role: 'tutor', text: message }]);
@@ -42,11 +43,37 @@ const ChatApp = () => {
     const extractedScore = scoreMatch ? parseInt(scoreMatch[1]) : null;
 
     // スコアが見つからなかった場合のデフォルト処理
-    setScore(extractedScore !== null ? extractedScore : 'スコアが見つかりませんでした');
+    if (extractedScore !== null) {
+      let newPoints = 0;
+      if (extractedScore >= 90) {
+        newPoints = 10; // 90点以上で+10点
+      } else if (extractedScore >= 75) {
+        newPoints = 5; // 75点以上で+5点
+      } else if (extractedScore < 10) {
+        newPoints = -10; // 10点未満で-10点
+      } else if (extractedScore < 30) {
+        newPoints = -5; // 30点未満で-5点
+      }
+
+      setScore((prevScore) => prevScore + newPoints); // スコアを更新
+      setTotalScore((prevTotal) => prevTotal + newPoints); // 累積スコアを更新
+    }
 
     // "模範解答"に関連する部分を抽出（模範解答というキーワード以降のテキストを抽出）
-    const modelAnswerMatch = reply.match(/模範解答:\s*([\s\S]*)/);
-    const modelAnswer = modelAnswerMatch ? modelAnswerMatch[1].trim() : '模範解答が見つかりませんでした';
+    // const modelAnswerMatch = reply.match(/模範解答:\s*([\s\S]*)/);
+    // const modelAnswer = modelAnswerMatch ? modelAnswerMatch[1].trim() : '模範解答が見つかりませんでした';
+
+
+    const allMatches = reply.match(/「(.*?)」/g);
+
+    // allMatchesを出力して確認
+    console.log("allMatches:", allMatches);
+
+    // 配列から「」内の評価と模範解答を取得
+    const evaluation = allMatches && allMatches.length > 0 ? allMatches[0].replace(/「|」/g, '').trim() : "講評が見つかりませんでした";
+    const modelAnswer = allMatches && allMatches.length > 1 ? allMatches[allMatches.length - 1].replace(/「|」/g, '').trim() : "模範解答が見つかりませんでした";
+
+
 
     setMessages((prevMessages) => [
       ...prevMessages,
@@ -63,9 +90,8 @@ const ChatApp = () => {
     }
   };
 
-  // 点数に応じて顔の画像を変更
+  // 現在のスコアに応じて顔の画像を変更
   const getFaceImage = () => {
-    if (score === null || score === 'スコアが見つかりませんでした') return neutralFace;  // 点数がまだ無い場合は真顔
     if (score < 30) return sadFace;          // 30点以下は悲しい顔
     if (score >= 90) return motivatedFace;   // 90点以上はやる気のある顔
     if (score >= 75) return smileFace;       // 75点以上はニコニコ顔
@@ -79,6 +105,9 @@ const ChatApp = () => {
         <VStack spacing={4}>
           {/* 生徒の顔を表示 */}
           <Image src={getFaceImage()} alt="生徒の顔" boxSize="100px" />
+
+          {/* 累積スコアを表示 */}
+          <Text fontSize="lg" fontWeight="bold">累積スコア: {totalScore}</Text>
 
           {/* メッセージの表示 */}
           {messages.map((msg, index) => (
