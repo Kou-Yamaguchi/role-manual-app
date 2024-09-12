@@ -1,6 +1,11 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 ### .envにAPIキーをペーストすると動きます
 OPENAI_API_KEY=API_KEY
+
+環境変数でOPENAIAPIを取得しています　各自設定すればいいける？
+export OPENAI_API_KEY=API_KEY
+echo $OPENAI_API_KEY で確認する感じで。。。
+
 ## Getting Started
 
 First, run the development server:
