@@ -1,82 +1,107 @@
+//  const script = [
+//     'こんにちは、先生！今日は何を勉強すればいいですか？',
+//     '先週、数学のテストで50点しか取れなかったんです。',
+//     'どうしたらもっと点数が上がりますか？',
+//     'あと、英語の宿題も難しいです。文法がよくわかりません。',
+//     '明日、友達と遊ぶ約束があるんですが、勉強もしたほうがいいですよね？',
+//     '数学の宿題は解けるんですが、時間がかかってしまいます。どうすれば早く解けるようになりますか？',
+//     '理科の実験レポートもあるんですけど、どう書けばいいかわかりません。',
+//     '今週の勉強のスケジュールはどのように組めばいいですか？',
+//   ];
 import { useState } from 'react';
-import { VStack, HStack, Box, Text, Input, Button } from '@chakra-ui/react';
+import { VStack, HStack, Box } from '@chakra-ui/react';
+import Sidebar from './Sidebar';
+import ChatForm from './ChatForm';
+import Message from './Message';
 
 const ChatApp = () => {
-  // 台本の配列
   const script = [
     'こんにちは、先生！今日は何を勉強すればいいですか？',
     '先週、数学のテストで50点しか取れなかったんです。',
     'どうしたらもっと点数が上がりますか？',
-    'あと、英語の宿題も難しいです。文法がよくわかりません。',
-    '明日、友達と遊ぶ約束があるんですが、勉強もしたほうがいいですよね？',
-    '数学の宿題は解けるんですが、時間がかかってしまいます。どうすれば早く解けるようになりますか？',
-    '理科の実験レポートもあるんですけど、どう書けばいいかわかりません。',
-    '今週の勉強のスケジュールはどのように組めばいいですか？',
+    // その他の台本
   ];
 
-  const [messages, setMessages] = useState([{ role: 'student', text: script[0] }]); // 台本の最初のセリフからスタート
-  const [currentScriptIndex, setCurrentScriptIndex] = useState(1); // 次のセリフのインデックス
+  const [messages, setMessages] = useState([{ role: 'student', text: script[0] }]);
+  const [currentScriptIndex, setCurrentScriptIndex] = useState(1);
   const [input, setInput] = useState('');
 
-  const handleSendMessage = async () => {
-    if (!input) return;
-
-    // 講師（tutor）のメッセージを追加
-    setMessages((prevMessages) => [...prevMessages, { role: 'tutor', text: input }]);
-
-    // ChatGPT API にメッセージを送信してアドバイスの評価を受ける
+  const handleSendMessage = async (message) => {
+    setMessages((prevMessages) => [...prevMessages, { role: 'tutor', text: message }]);
+  
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message: input }),
+      body: JSON.stringify({ message }),
     });
-
+  
     const data = await res.json();
-
-    // 採点結果のメッセージを表示
+  
+    console.log('ChatGPT Reply:', data); // ここで確認
+    const reply = data.reply;
+  
+    // reply全文を表示
     setMessages((prevMessages) => [
       ...prevMessages,
-      { role: 'system', text: `ChatGPTの評価: ${data.reply}` }
+      { role: 'system', text: `ChatGPT reply: ${reply}` }
     ]);
-
-    // 次の台本のセリフがあれば表示
+  
     if (currentScriptIndex < script.length) {
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: 'student', text: script[currentScriptIndex] }
       ]);
-      setCurrentScriptIndex(currentScriptIndex + 1); // 次のセリフに進む
+      setCurrentScriptIndex(currentScriptIndex + 1);
     }
-
-    setInput(''); // 入力フィールドをリセット
   };
+  
+
+
+  
+  // const handleSendMessage = async (message) => {
+  //   setMessages((prevMessages) => [...prevMessages, { role: 'tutor', text: message }]);
+
+  //   const res = await fetch('/api/chat', {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify({ message }),
+  //   });
+
+  //   const data = await res.json();
+
+  //   // データを確認してundefinedが表示されないようにする
+  //   setMessages((prevMessages) => [
+  //     ...prevMessages,
+  //     { role: 'system', text: `講評: ${data.evaluation}` },
+  //     { role: 'system', text: `点数: ${data.score} / 100` },  // / 100をここでは削除
+  //     { role: 'system', text: `模範解答: ${data.modelAnswer}` }
+  //   ]);
+
+  //   if (currentScriptIndex < script.length) {
+  //     setMessages((prevMessages) => [
+  //       ...prevMessages,
+  //       { role: 'student', text: script[currentScriptIndex] }
+  //     ]);
+  //     setCurrentScriptIndex(currentScriptIndex + 1);
+  //   }
+  // };
 
   return (
-    <VStack spacing={4} align="stretch" p={4}>
-      {messages.map((msg, index) => (
-        <Box
-          key={index}
-          alignSelf={msg.role === 'student' ? 'flex-start' : 'flex-end'}
-          bg={msg.role === 'student' ? 'blue.100' : msg.role === 'tutor' ? 'green.100' : 'gray.200'}
-          p={3}
-          borderRadius="md"
-          maxWidth="70%"
-        >
-          <Text>{msg.role === 'student' ? `生徒: ${msg.text}` : msg.role === 'tutor' ? `先生: ${msg.text}` : `${msg.text}`}</Text>
-        </Box>
-      ))}
-
-      <HStack>
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="アドバイスを入力してください"
-        />
-        <Button onClick={handleSendMessage}>送信</Button>
-      </HStack>
-    </VStack>
+    <HStack align="start" p={4}>
+      <Sidebar />
+      <Box flex="1" p={4}>
+        <VStack spacing={4}>
+          {messages.map((msg, index) => (
+            <Message key={index} text={msg.text} role={msg.role} />
+          ))}
+          <ChatForm onSubmit={handleSendMessage} /> {/* onSubmitを渡す */}
+        </VStack>
+      </Box>
+    </HStack>
   );
 };
 
