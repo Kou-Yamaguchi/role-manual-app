@@ -1,82 +1,93 @@
 import { useState } from 'react';
-import { VStack, HStack, Box, Text, Input, Button } from '@chakra-ui/react';
+import { VStack, HStack, Box, Image } from '@chakra-ui/react';
+import Sidebar from './Sidebar';
+import ChatForm from './ChatForm';
+import Message from './Message';
+
+// 顔の画像パス
+const sadFace = '/images/sadFace.png';
+const smileFace = '/images/smileFace.png';
+const motivatedFace = '/images/motivatedFace.png';
+const neutralFace = '/images/neutralFace.png';
 
 const ChatApp = () => {
-  // 台本の配列
   const script = [
     'こんにちは、先生！今日は何を勉強すればいいですか？',
     '先週、数学のテストで50点しか取れなかったんです。',
     'どうしたらもっと点数が上がりますか？',
-    'あと、英語の宿題も難しいです。文法がよくわかりません。',
-    '明日、友達と遊ぶ約束があるんですが、勉強もしたほうがいいですよね？',
-    '数学の宿題は解けるんですが、時間がかかってしまいます。どうすれば早く解けるようになりますか？',
-    '理科の実験レポートもあるんですけど、どう書けばいいかわかりません。',
-    '今週の勉強のスケジュールはどのように組めばいいですか？',
+    // その他の台本
   ];
 
-  const [messages, setMessages] = useState([{ role: 'student', text: script[0] }]); // 台本の最初のセリフからスタート
-  const [currentScriptIndex, setCurrentScriptIndex] = useState(1); // 次のセリフのインデックス
+  const [messages, setMessages] = useState([{ role: 'student', text: script[0] }]);
+  const [currentScriptIndex, setCurrentScriptIndex] = useState(1);
   const [input, setInput] = useState('');
+  const [score, setScore] = useState(null);  // 点数を保存する状態
 
-  const handleSendMessage = async () => {
-    if (!input) return;
+  const handleSendMessage = async (message) => {
+    setMessages((prevMessages) => [...prevMessages, { role: 'tutor', text: message }]);
 
-    // 講師（tutor）のメッセージを追加
-    setMessages((prevMessages) => [...prevMessages, { role: 'tutor', text: input }]);
-
-    // ChatGPT API にメッセージを送信してアドバイスの評価を受ける
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message: input }),
+      body: JSON.stringify({ message }),
     });
 
     const data = await res.json();
+    const reply = data.reply;
 
-    // 採点結果のメッセージを表示
+    // 点数を抽出するための正規表現（1桁以上の数字＋"点"を検索）
+    const scoreMatch = reply.match(/(\d+)\s*点/);  // "1桁以上の数字"を抽出するように修正
+    const extractedScore = scoreMatch ? parseInt(scoreMatch[1]) : null;
+
+    // スコアが見つからなかった場合のデフォルト処理
+    setScore(extractedScore !== null ? extractedScore : 'スコアが見つかりませんでした');
+
+    // "模範解答"に関連する部分を抽出（模範解答というキーワード以降のテキストを抽出）
+    const modelAnswerMatch = reply.match(/模範解答:\s*([\s\S]*)/);
+    const modelAnswer = modelAnswerMatch ? modelAnswerMatch[1].trim() : '模範解答が見つかりませんでした';
+
     setMessages((prevMessages) => [
       ...prevMessages,
-      { role: 'system', text: `ChatGPTの評価: ${data.reply}` }
+      { role: 'system', text: `点数: ${extractedScore !== null ? extractedScore : 'スコアが見つかりませんでした'} / 100` },
+      { role: 'system', text: `模範解答: ${modelAnswer}` }
     ]);
 
-    // 次の台本のセリフがあれば表示
     if (currentScriptIndex < script.length) {
       setMessages((prevMessages) => [
         ...prevMessages,
         { role: 'student', text: script[currentScriptIndex] }
       ]);
-      setCurrentScriptIndex(currentScriptIndex + 1); // 次のセリフに進む
+      setCurrentScriptIndex(currentScriptIndex + 1);
     }
+  };
 
-    setInput(''); // 入力フィールドをリセット
+  // 点数に応じて顔の画像を変更
+  const getFaceImage = () => {
+    if (score === null || score === 'スコアが見つかりませんでした') return neutralFace;  // 点数がまだ無い場合は真顔
+    if (score < 30) return sadFace;          // 30点以下は悲しい顔
+    if (score >= 90) return motivatedFace;   // 90点以上はやる気のある顔
+    if (score >= 75) return smileFace;       // 75点以上はニコニコ顔
+    return neutralFace;                      // それ以外は真顔
   };
 
   return (
-    <VStack spacing={4} align="stretch" p={4}>
-      {messages.map((msg, index) => (
-        <Box
-          key={index}
-          alignSelf={msg.role === 'student' ? 'flex-start' : 'flex-end'}
-          bg={msg.role === 'student' ? 'blue.100' : msg.role === 'tutor' ? 'green.100' : 'gray.200'}
-          p={3}
-          borderRadius="md"
-          maxWidth="70%"
-        >
-          <Text>{msg.role === 'student' ? `生徒: ${msg.text}` : msg.role === 'tutor' ? `先生: ${msg.text}` : `${msg.text}`}</Text>
-        </Box>
-      ))}
+    <HStack align="start" p={4}>
+      <Sidebar />
+      <Box flex="1" p={4}>
+        <VStack spacing={4}>
+          {/* 生徒の顔を表示 */}
+          <Image src={getFaceImage()} alt="生徒の顔" boxSize="100px" />
 
-      <HStack>
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="アドバイスを入力してください"
-        />
-        <Button onClick={handleSendMessage}>送信</Button>
-      </HStack>
-    </VStack>
+          {/* メッセージの表示 */}
+          {messages.map((msg, index) => (
+            <Message key={index} text={msg.text} role={msg.role} />
+          ))}
+          <ChatForm onSubmit={handleSendMessage} /> {/* onSubmitを渡す */}
+        </VStack>
+      </Box>
+    </HStack>
   );
 };
 

@@ -1,26 +1,27 @@
 import { useState } from 'react';
-import { VStack, Button, Input } from '@chakra-ui/react';
+import { Input, Button } from '@chakra-ui/react';
 
 const ChatForm = ({ onSubmit }) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = () => {
-    onSubmit(message);
-    setMessage('');
+    if (message.trim()) {
+      onSubmit(message);  // onSubmitを呼び出す
+      setMessage('');     // メッセージをクリア
+    }
   };
 
   return (
-    <VStack spacing={4}>
+    <div>
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="アドバイスを入力してください"
       />
-      <Button onClick={handleSubmit} colorScheme="teal">
-        送信
-      </Button>
-    </VStack>
+      <Button onClick={handleSubmit}>送信</Button>
+    </div>
   );
 };
 
 export default ChatForm;
+
