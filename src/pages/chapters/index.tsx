@@ -1,11 +1,9 @@
 import Sidebar from '../../components/Sidebar';
 import { Heading, Card, CardHeader, CardBody, Stack, Text, Button, Select, chakra } from '@chakra-ui/react'
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 
 const Chapters = () => {
-  // const navigate = useNavigate();
-  
   // const [chapters, setChapters] = useState(false);
   // interface ChapterProps {
   //   title: string;
@@ -17,6 +15,8 @@ const Chapters = () => {
   // const createChapter = (chapterInfo: ChapterProps) => {
     
   // }
+
+  const router = useRouter()
 
   class Chapter {
     title: string;
