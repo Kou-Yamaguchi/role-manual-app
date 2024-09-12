@@ -4,7 +4,44 @@ OPENAI_API_KEY=API_KEY
 ## Getting Started
 
 First, run the development server:
+### スコア推移計算のロジック
 
+1. **初期スコア**  
+   - 初期スコアは **50点** でスタート。
+
+2. **得点に基づく加減点のロジック**  
+   - 回答の点数に応じて、次のようにポイントが増減します。
+   
+   | 条件                   | 加減点  |
+   | ---------------------- | ------- |
+   | 点数が **90点以上**     | +10点   |
+   | 点数が **75点以上**     | +5点    |
+   | 点数が **30点未満**     | -5点    |
+   | 点数が **10点未満**     | -10点   |
+   | その他の点数           | ±0点    |
+
+3. **累積スコアの計算式**
+   - 各回答後の累積スコアは、前回の累積スコアに加減点を反映して更新します。
+
+   **累積スコア** = **前回の累積スコア** + **加減点**
+
+   例えば:
+   - 初期スコアが50点で、最初の回答が **85点** だった場合、加減点は **±0点**。
+   - 次の回答が **95点** なら加減点は **+10点**。
+   - 累積スコアの推移は以下のようになります。
+
+   ```text
+   初期スコア: 50点
+   1回目の回答 (85点): 累積スコア = 50 + 0 = 50点
+   2回目の回答 (95点): 累積スコア = 50 + 10 = 60点
+   ```
+
+4. **顔の変化**
+   - スコアに応じて、生徒の顔が変わります。
+     - **90点以上**: やる気のある顔
+     - **75点以上**: ニコニコ顔
+     - **30点未満**: 悲しい顔
+     - その他: 真顔
 ```bash
 npm run dev
 # or
@@ -17,25 +54,4 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
