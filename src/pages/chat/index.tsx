@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { HStack, Box } from '@chakra-ui/react';
-import Sidebar from '../components/Sidebar';
-import ChatApp from '../components/ChatApp';
-import UploadForm from '../components/UploadForm';
+import Sidebar from '../../components/Sidebar';
+import ChatApp from '../../components/ChatApp';
+import UploadForm from '../../components/UploadForm';
 
 const IndexPage = () => {
   const [scriptUploaded, setScriptUploaded] = useState(false);
