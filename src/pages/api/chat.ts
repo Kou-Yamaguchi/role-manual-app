@@ -14,7 +14,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const completion = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'あなたは教師です。生徒のアドバイスを100点満点で採点し、講評、点数、模範解答を出してください。' },
+          { role: 'system', 
+           //   content: 'あなたは教師です。生徒のアドバイスを100点満点で採点し、講評、点数、模範解答を出してください。' 
+          content: 'あなたは教師です。以下の生徒へのアドバイスを100点満点で採点し、簡潔な評価と点数、そして短く端的な模範解答を出してください。模範解答は、1-2文以内で、具体的で実行しやすいものにしてください。',
+          },
           { role: 'user', content: message },
         ],
       });
@@ -25,10 +28,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log("ChatGPT reply:", reply);
 
       // 講評、点数、模範解答をパースして応答
-      const evaluation = reply.match(/講評[\s\S]*?:(.*)/)?.[1]?.trim();
-      const score = reply.match(/点数[\s\S]*?:\s*(\d+)\s*\/\s*100/)?.[1]?.trim();
-      const modelAnswer = reply.match(/模範解答[\s\S]*?:(.*)/)?.[1]?.trim();
+      // const evaluation = reply.match(/講評[\s\S]*?:(.*)/)?.[1]?.trim();
+      // const score = reply.match(/点数[\s\S]*?:\s*(\d+)\s*\/\s*100/)?.[1]?.trim();
+      // const modelAnswer = reply.match(/模範解答[\s\S]*?:(.*)/)?.[1]?.trim();
 
+      const evaluation = reply.match(/「(.*?)」/)?.[1]?.trim();
+      const score = reply.match(/点数[\s\S]*?:\s*(\d+)\s*\/\s*100/)?.[1]?.trim();
+      const modelAnswer = reply.match(/「(.*?)」(?!.*「.*」)/)?.[1]?.trim(); // 最後の「」内の内容を模範解答として抽出
       res.status(200).json({ reply, evaluation, score, modelAnswer });
 
       res.status(200).json({

@@ -38,14 +38,20 @@ const ChatApp = () => {
     });
   
     const data = await res.json();
-  
-    console.log('ChatGPT Reply:', data); // ここで確認
     const reply = data.reply;
   
-    // reply全文を表示
+    // 点数を抽出するための正規表現（二桁の数字＋"点"を検索）
+    const scoreMatch = reply.match(/(\d{2})点/);
+    const score = scoreMatch ? scoreMatch[1] : 'スコアが見つかりませんでした';
+  
+    // "模範解答"に関連する部分を抽出（模範解答というキーワード以降のテキストを抽出）
+    const modelAnswerMatch = reply.match(/模範解答:\s*([\s\S]*)/);
+    const modelAnswer = modelAnswerMatch ? modelAnswerMatch[1].trim() : '模範解答が見つかりませんでした';
+  
     setMessages((prevMessages) => [
       ...prevMessages,
-      { role: 'system', text: `ChatGPT reply: ${reply}` }
+      { role: 'system', text: `点数: ${score} / 100` },
+      { role: 'system', text: `模範解答: ${modelAnswer}` }
     ]);
   
     if (currentScriptIndex < script.length) {
@@ -57,7 +63,7 @@ const ChatApp = () => {
     }
   };
   
-
+  
 
   
   // const handleSendMessage = async (message) => {
